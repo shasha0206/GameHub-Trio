@@ -23,4 +23,4 @@ User Interaction	-
 3. Buttons to start each game
    
 Graphical Elements - 	Background images, icons, and game graphics
-Additional Features	 - High score tracking for Snake game
+
