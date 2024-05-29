@@ -22,8 +22,10 @@ bg_label.grid(row=0, column=0)
 welcome_entry = Entry(welcome_frame)
 welcome_entry.place(x = 260, y = 280,width=200)
 
-# breakout game
 pygame.init()
+
+# breakout game
+score = 0
 
 def bricks_create():
     colours = ['#35e9f2', 'red', 'green']
@@ -31,7 +33,7 @@ def bricks_create():
     brick_w = 47
     brick_h = 20
     brick_x = 5
-    brick_y = 50
+    brick_y = 0
     for colour in colours:
         for _ in range(2):
             for _ in range(10):
@@ -52,23 +54,25 @@ def collision(ball_x, ball_y, p_x, p_y, p_w, ball_vel_x, ball_vel_y, screen_widt
         ball_vel_y *= -1
     
     # on collision removes brick
+    global score
     for i in bricks[:]:
         brick_x, brick_y, _ = i
         if (brick_x <= ball_x <= brick_x + 47) and (brick_y <= ball_y <= brick_y + 20):
             ball_vel_y *= -1
             bricks.remove(i)
-            
+            score += 1
             
     return ball_vel_x, ball_vel_y
 
 def gameloop():
+    t.withdraw()
     # game variables
     clock = pygame.time.Clock()
     game_end = False
     screen_width = 500
     screen_height = 500
 
-    p_w = 55 
+    p_w = 80 
     p_h = 10 
     p_x = 200 
     p_y = 470 
@@ -85,12 +89,25 @@ def gameloop():
 
     bricks = bricks_create()  # Create bricks list
 
+    # highscore initialisation
+    highscore = 0
+    with open (r"C:\Users\malkh\Desktop\Python\imp_files\project_4\highscore_breakout.txt","r") as f:
+        highscore = int(f.read())
+
     while not game_end:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_end = True
-        
-        game_window.fill('black')
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q: 
+                    game_end = True
+                    t.deiconify()
+                                   
+        bg = pygame.image.load(r"C:\Users\malkh\Desktop\Camera Roll\project_4\Screenshot 2024-05-10 143404.png")
+        game_over_bg = pygame.image.load(r"C:\Users\malkh\Desktop\Camera Roll\project_4\Screenshot 2024-05-29 140143.png")
+        game_over_bg = pygame.transform.scale(game_over_bg,(screen_width,screen_height))
+
+        game_window.blit(bg,(0,0))
         pygame.draw.rect(game_window, 'white', (p_x, p_y, p_w, p_h))
 
         keys = pygame.key.get_pressed()
@@ -112,13 +129,46 @@ def gameloop():
         # drawing ball
         pygame.draw.circle(game_window, 'white', (ball_x, ball_y), ball_radius)
 
+        # updating highscore
+        if score > highscore:
+            highscore = score
+            with open (r"C:\Users\malkh\Desktop\Python\imp_files\project_4\highscore_breakout.txt","w") as f:
+                f.write(str(highscore))
+
+        # gameover bg 
+        if ball_y >= screen_height:
+            game_window.blit(game_over_bg, (0, 0))
+            pygame.display.update()
+            pygame.time.wait(3000)
+
+            #  quit initialisation
+            option = messagebox.askyesno("info", "Do you want to try other games?")
+            if option:
+                pygame.quit()
+                t.deiconify()
+            else:
+                pygame.quit()
+                t.withdraw()
+
+        # displaying score
+        score_text = pygame.font.SysFont('bold',50)
+        score_display = score_text.render("Score: " + str(score),True,'white')
+        game_window.blit(score_display,(200,250))
+    
+        # displaying highscore
+        highscore_text = pygame.font.SysFont('bold',50)
+        highscore_display = highscore_text.render('Highscore: ' + str(highscore),True,'white')
+        game_window.blit(highscore_display,(175,300))
+
         pygame.display.update()
         clock.tick(30)
 
     pygame.quit()
 
-# second game
+# bullet dodge game
 def second_game():
+    pygame.init()
+    t.withdraw()
     clock = pygame.time.Clock()
 
     # setting game window
@@ -141,29 +191,58 @@ def second_game():
     bullet_width = 10
     bullet_height = 20
 
-    def create_bullets(bullet):
-        game_over = False
+    def create_bullets(bullet,bool):
+        game_over = bool
         for bullets in bullet:
-            if not game_over:
+            if game_over == False:
                 pygame.draw.rect(game_window,'white',bullets)
+
+    # highest time initialisation
+    highest_time = 0
+    with open(r"C:\Users\malkh\Desktop\Python\imp_files\project_4\highscore_bullet.txt",'r') as f:
+       highest_time = int(f.read())
 
     # gameloop
     def game_loop_2():
         # game variable
+        nonlocal highest_time
         game_over = False
         player_width = 30
         player_height = 50
         x = 450
         y = screen_height - player_height
         game_end = False
+        start_time = pygame.time.get_ticks()
 
         while not game_end:        
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     game_end = True
-
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q: 
+                        game_end = True
+                        t.deiconify()
+                        
             # displaying background
             game_window.blit(bg, (0, 0))
+
+            # time / score
+            if not game_end:
+                time = (pygame.time.get_ticks() - start_time) // 1000
+                score_text = pygame.font.SysFont('bold',30)
+                time_score = score_text.render("TIME: " + str(time),True,'white')
+                game_window.blit(time_score,(10,10))
+
+            # updating highscore 
+            if time > highest_time:
+                highest_time = time
+                with open(r"C:\Users\malkh\Desktop\Python\imp_files\project_4\highscore_bullet.txt",'w') as f:
+                    f.write(str(highest_time))
+            
+            # displaying highscore
+            highest_time_text = pygame.font.SysFont('bold',30)
+            highest_time_display = highest_time_text.render("Highest time: " + str(highest_time),True,'white')
+            game_window.blit(highest_time_display,(730,10))
 
             # drawing rectangle
             pygame.draw.rect(game_window, 'red', (x, y, player_width, player_height))
@@ -198,16 +277,28 @@ def second_game():
 
             if game_over:
                 game_window.blit(game_over_bg,(0,0))
+                pygame.display.update()
+                pygame.time.wait(3000)
+                optoin_2 = messagebox.askyesno("info",'Do you want to try other games?')
+                if optoin_2 == True:
+                    t.deiconify()
+                    pygame.quit()
+                else:
+                    pygame.quit()
+                    t.withdraw()
 
-            create_bullets(bullet)
+            create_bullets(bullet,game_over)
 
             pygame.display.update()
             clock.tick(30)
+
     game_loop_2()
     pygame.quit()
 
-# third game 
+# snake game 
 def third_game():
+    t.withdraw()
+    pygame.init()
     pygame.font.init()
     apple_image = pygame.image.load(r"C:\Users\malkh\Pictures\Camera Roll\snake_game\apple.png")
 
@@ -277,7 +368,7 @@ def third_game():
             elif event.key == pygame.K_d:
                 velocity_x += 5  # speed of snake 
                 velocity_y = 0
-            elif event.key == pygame.K_q:
+            elif event.key == pygame.K_x:
                 score += 5
 
     # Food
@@ -344,8 +435,11 @@ def third_game():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            elif event.type == pygame.KEYDOWN:  # if entre is pressed game start
-                if event.key == pygame.K_RETURN:
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q: 
+                    pygame.quit()
+                    quit()
+                elif event.key == pygame.K_RETURN:    # if entre is pressed game start
                     def game_loop():
                         nonlocal highscore
                         game_over = False
@@ -356,8 +450,12 @@ def third_game():
                             for event in pygame.event.get():
                                 if event.type == pygame.QUIT:
                                     game_end = True
+                                elif event.type == pygame.KEYDOWN:
+                                    if event.key == pygame.K_q:
+                                        game_end = True
+                                
                                 binding(event)
-
+                            
                             game_window.blit(bg, (0, 0))
 
                             snake_x += velocity_x  #continuouse movement of snake
@@ -400,11 +498,21 @@ def third_game():
                                 game_window.blit(game_over_text,(280,214))
                                 highscore_font = font_game_over.render( "HIGHSCORE: " + str(highscore),True,'white')
                                 game_window.blit(highscore_font,(290,250))
+                                pygame.display.update()
+                                pygame.time.wait(3000)
+                                optoin_3 = messagebox.askyesno("info",'Do you want to try other games?')
+                                if optoin_3:
+                                    pygame.quit()
+                                    t.deiconify()
+                                else:
+                                    pygame.quit()
+                                    t.withdraw()
 
                             pygame.display.update()
                             clock.tick(30)
-                    game_loop()
 
+                    game_loop()        
+                
 # creating second frame by binding entre key
 def second_frame(click):
     welcome_message = welcome_entry.get()
@@ -417,10 +525,10 @@ def second_frame(click):
 t.bind("<Return>", second_frame)
 
 # temp functions 
-def coords(event):
-    print(f"coords are:{event.x},{event.y}")
+# def coords(event):
+#     print(f"coords are:{event.x},{event.y}")
 
-select_frame.bind("<Button-1>",coords)
+# select_frame.bind("<Button-1>",coords)
 
 # snake game icon 
 s_game_image = PhotoImage(file=r"C:\Users\malkh\Desktop\Camera Roll\project_4\Screenshot 2024-05-10 170049.png")
